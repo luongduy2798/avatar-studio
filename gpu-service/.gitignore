@@ -1,0 +1,6 @@
+.venv/
+.runtime/
+.legacy-backend-cache/
+__pycache__/
+*.pyc
+.env
