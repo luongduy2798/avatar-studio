@@ -24,6 +24,22 @@ fi
 
 "$ROOT/.venv/bin/pip" install --upgrade pip
 "$ROOT/.venv/bin/pip" install -r "$ROOT/requirements.txt"
+
+# The upstream Linux requirements intentionally leave PyTorch to the machine
+# setup. Install the pinned pair used by this worker so the daemon can import
+# torch on both CUDA servers and CPU-only hosts. Override TORCH_INDEX_URL when
+# the server uses another CUDA wheel channel.
+TORCH_INDEX_URL="${TORCH_INDEX_URL:-}"
+if [ -z "$TORCH_INDEX_URL" ]; then
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu121"
+  else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cpu"
+  fi
+fi
+"$ROOT/.venv/bin/pip" install \
+  --index-url "$TORCH_INDEX_URL" \
+  torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0
 "$ROOT/.venv/bin/pip" install 'requests>=2.31,<3' 'huggingface_hub[cli]'
 
 download_weights() {

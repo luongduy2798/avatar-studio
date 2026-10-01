@@ -37,6 +37,10 @@ queue messages and generated outputs. From another computer, connect with an
 SSH tunnel (`ssh -L 5173:127.0.0.1:5173 -L 8000:127.0.0.1:8000 user@server`)
 and open `http://127.0.0.1:5173` in the local browser.
 
+The Ubuntu setup installs PyTorch from the CUDA 12.1 wheel channel when
+`nvidia-smi` is available, and the CPU wheel channel otherwise. Set
+`TORCH_INDEX_URL` to a different PyTorch channel when the server requires it.
+
 ## Browser benchmark
 
 Open `http://127.0.0.1:5173`, upload one image, choose expressions, then use the
