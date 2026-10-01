@@ -51,6 +51,13 @@ fi
 "$ROOT/.venv/bin/pip" install \
   --index-url "$TORCH_INDEX_URL" \
   torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+if [ "$TORCH_INDEX_URL" != "https://download.pytorch.org/whl/cpu" ]; then
+  # LivePortrait pins ONNX Runtime 1.18.0 (cuDNN 8), which cannot use the
+  # cuDNN 9 libraries bundled with PyTorch 2.7. Keep both GPU runtimes aligned.
+  # Keep LivePortrait's pinned NumPy/SciPy stack; ORT's dependency resolver
+  # otherwise upgrades NumPy to a release incompatible with albumentations.
+  "$ROOT/.venv/bin/pip" install --no-deps onnxruntime-gpu==1.21.1
+fi
 "$ROOT/.venv/bin/pip" install 'requests>=2.31,<3' 'huggingface_hub[cli]'
 
 download_weights() {

@@ -10,8 +10,8 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import onnxruntime as ort
 import torch
+import onnxruntime as ort
 
 from src.config.inference_config import InferenceConfig
 from src.config.crop_config import CropConfig
