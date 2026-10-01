@@ -207,11 +207,23 @@ class GenerationEngine:
         onnx_device = os.getenv("AVATAR_ONNX_DEVICE", "auto").strip().lower()
         if onnx_device not in {"auto", "cuda", "cpu"}:
             raise ValueError("AVATAR_ONNX_DEVICE must be auto, cuda, or cpu")
-        self.onnx_use_cuda = bool(
-            onnx_device != "cpu"
-            and self.use_cuda
-            and "CUDAExecutionProvider" in ort.get_available_providers()
-        )
+        available_onnx_cuda = "CUDAExecutionProvider" in ort.get_available_providers()
+
+        def resolve_onnx_cuda(variable: str) -> bool:
+            requested = os.getenv(variable, onnx_device).strip().lower()
+            if requested not in {"auto", "cuda", "cpu"}:
+                raise ValueError(f"{variable} must be auto, cuda, or cpu")
+            return bool(
+                requested != "cpu"
+                and self.use_cuda
+                and available_onnx_cuda
+            )
+
+        # Preprocessing (face detection/landmarks) and matte/export can use
+        # different providers. This is useful when small ONNX CUDA calls
+        # contend with the LivePortrait decoder on WSL.
+        self.onnx_preprocess_use_cuda = resolve_onnx_cuda("AVATAR_ONNX_PREPROCESS_DEVICE")
+        self.onnx_matte_use_cuda = resolve_onnx_cuda("AVATAR_ONNX_MATTE_DEVICE")
         self.use_mps = bool(torch.backends.mps.is_available())
         self.decode_batch_size = max(
             1,
@@ -240,11 +252,12 @@ class GenerationEngine:
         # intended production path and lets the whole detector pipeline use GPU.
         self.cropper = Cropper(
             crop_cfg=self.crop_cfg,
-            flag_force_cpu=not self.onnx_use_cuda,
+            flag_force_cpu=not self.onnx_preprocess_use_cuda,
         )
-        onnx_provider = "cuda" if self.onnx_use_cuda else "cpu"
-        self.segmenter = HeadSegmenter(head_parser_path, execution_provider=onnx_provider)
-        self.portrait_matte = PortraitMatte(hair_matte_path, execution_provider=onnx_provider)
+        preprocess_provider = "cuda" if self.onnx_preprocess_use_cuda else "cpu"
+        matte_provider = "cuda" if self.onnx_matte_use_cuda else "cpu"
+        self.segmenter = HeadSegmenter(head_parser_path, execution_provider=matte_provider)
+        self.portrait_matte = PortraitMatte(hair_matte_path, execution_provider=matte_provider)
         self.wrapper = LivePortraitWrapper(inference_cfg)
         self.device = self.wrapper.device
         if self.use_cuda:
@@ -259,7 +272,7 @@ class GenerationEngine:
         landmark_path = Path(inference_cfg.checkpoint_M).parents[1] / "landmark.onnx"
         self.landmark_runner = LandmarkRunner(
             ckpt_path=str(landmark_path),
-            onnx_provider=onnx_provider,
+            onnx_provider=preprocess_provider,
         )
         # The preset table is immutable and shared by every request. The
         # intensity-dependent tensors are still built from the user's source.
