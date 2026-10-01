@@ -17,7 +17,12 @@ command -v node >/dev/null 2>&1 && echo "  Node: $(node --version)" || echo "  N
 command -v npm >/dev/null 2>&1 && echo "  npm: $(npm --version)" || echo "  npm: missing"
 command -v "$PYTHON_BIN" >/dev/null 2>&1 && echo "  Python: $($PYTHON_BIN --version 2>&1)" || echo "  Python: missing ($PYTHON_BIN)"
 command -v ffmpeg >/dev/null 2>&1 && echo "  ffmpeg: ready" || echo "  ffmpeg: missing"
-command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
+if command -v nvidia-smi >/dev/null 2>&1; then
+  echo "  NVIDIA driver: ready"
+  nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+else
+  echo "  NVIDIA driver: nvidia-smi missing"
+fi
 
 if [ -x "$ROOT/gpu-service/.venv/bin/python" ]; then
   echo "  GPU service venv: ready"
