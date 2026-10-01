@@ -570,6 +570,25 @@ a:focus-visible {
   font-weight: 600;
 }
 
+.benchmark-timings {
+  display: flex;
+  min-width: 360px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  white-space: normal;
+  color: var(--muted, #8d939d);
+  font-size: 0.72rem;
+}
+
+.benchmark-timings span {
+  white-space: nowrap;
+}
+
+.benchmark-timings strong {
+  color: #f5f7f8;
+  font-weight: 600;
+}
+
 .benchmark-gallery {
   display: grid;
   gap: 14px;

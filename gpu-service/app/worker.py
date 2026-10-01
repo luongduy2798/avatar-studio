@@ -83,13 +83,24 @@ class GenerationWorker:
             "total": total,
             "percent": round(((0.9 * prepared + 0.1 * completed) / total) * 100),
         }
-        if next_progress == job.get("progress"):
+        raw_timings = progress.get("timings", {})
+        if isinstance(raw_timings, dict):
+            next_timings = {
+                str(key): float(value)
+                for key, value in raw_timings.items()
+                if isinstance(value, (int, float))
+            }
+        else:
+            next_timings = {}
+        if next_progress == job.get("progress") and next_timings == job.get("timings", {}):
             return job
-        return self._save(
-            job,
-            stage="expressions" if prepared < total else "export",
-            progress=next_progress,
-        )
+        changes: dict[str, Any] = {
+            "stage": "expressions" if prepared < total else "export",
+            "progress": next_progress,
+        }
+        if next_timings:
+            changes["timings"] = next_timings
+        return self._save(job, **changes)
 
     def _mark_failed(
         self,

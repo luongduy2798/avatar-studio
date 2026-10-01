@@ -20,6 +20,15 @@ const expressionOptions: Array<{ id: ExpressionId; label: string; glyph: string;
   { id: 'spectacular_flop', label: 'Spectacular flop', glyph: '☹', detail: 'Mếu, khóe miệng trễ xuống' },
 ]
 
+const benchmarkTimingStages = [
+  { key: 'crop', label: 'crop' },
+  { key: 'matte_and_source_cutout', label: 'matte' },
+  { key: 'feature_and_landmarks', label: 'feature' },
+  { key: 'decode', label: 'decode' },
+  { key: 'parser_and_export', label: 'export' },
+  { key: 'total', label: 'total' },
+] as const
+
 type Status = 'idle' | 'ready' | 'generating' | 'error'
 
 function App() {
@@ -306,7 +315,7 @@ function App() {
             </div>
             <div className="benchmark-table-wrap">
               <table className="benchmark-table">
-                <thead><tr><th>Phase</th><th>Run</th><th>Job</th><th>Status</th><th>Progress</th><th>Job elapsed</th><th>Error</th></tr></thead>
+                <thead><tr><th>Phase</th><th>Run</th><th>Job</th><th>Status</th><th>Progress</th><th>Job elapsed</th><th>Pipeline timing</th><th>Error</th></tr></thead>
                 <tbody>
                   {benchmarkRun.jobs.map((job) => (
                     <tr key={job.job_id}>
@@ -316,13 +325,23 @@ function App() {
                       <td>{job.status}</td>
                       <td>{job.completed_count}/{job.total}</td>
                       <td>{job.timings.total?.toFixed(2) ?? '—'}s</td>
+                      <td>
+                        <div className="benchmark-timings">
+                          {benchmarkTimingStages.map((stage) => {
+                            const seconds = job.timings[stage.key]
+                            return seconds === undefined ? null : (
+                              <span key={stage.key}><strong>{stage.label}</strong> {seconds.toFixed(2)}s</span>
+                            )
+                          })}
+                        </div>
+                      </td>
                       <td>{job.error ?? ''}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="benchmark-footnote">Measured batch là thời gian thực của cả batch. Job elapsed là thời gian từng job nằm trong batch, nên các dòng không cộng lại thành tổng.</p>
+            <p className="benchmark-footnote">Timing pipeline cập nhật theo từng stage. Decode là thời gian chung của batch nên có thể lặp lại ở nhiều job. Measured batch là thời gian thực của cả batch; Job elapsed không cộng lại thành tổng.</p>
             <div className="benchmark-gallery">
               {benchmarkRun.jobs.filter((job) => job.phase === 'measure' && job.outputs.length > 0).map((job) => (
                 <div className="benchmark-job-gallery" key={job.job_id}>
