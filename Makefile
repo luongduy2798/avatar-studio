@@ -5,7 +5,7 @@ API_DIR := $(ROOT)/api-server
 GPU_DIR := $(ROOT)/gpu-service
 WEB_DIR := $(ROOT)/web-client
 
-PYTHON_BIN ?= python3.10
+PYTHON_BIN ?= $(shell if command -v python3.10 >/dev/null 2>&1; then echo python3.10; else echo python3; fi)
 LIVEPORTRAIT_ROOT ?= $(HOME)/.cache/avatar-studio/LivePortrait
 
 .PHONY: help setup setup-node setup-gpu setup-liveportrait check-setup doctor run dev

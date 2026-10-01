@@ -5,10 +5,21 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 API_DIR="$ROOT/api-server"
 GPU_DIR="$ROOT/gpu-service"
 WEB_DIR="$ROOT/web-client"
-PYTHON_BIN="${PYTHON_BIN:-python3.10}"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
 AVATAR_SKIP_SETUP="${AVATAR_SKIP_SETUP:-0}"
 AVATAR_RESET_RUNTIME="${AVATAR_RESET_RUNTIME:-1}"
+
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3.10 >/dev/null 2>&1; then
+    PYTHON_BIN=python3.10
+  else
+    PYTHON_BIN=python3
+  fi
+fi
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1 && [ "$PYTHON_BIN" = "python3.10" ] && command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=python3
+fi
 
 API_PID=""
 GPU_PID=""
