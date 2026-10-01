@@ -37,8 +37,12 @@ if [ "$AVATAR_SKIP_SETUP" != "1" ]; then
   "$GPU_DIR/.venv/bin/python" -m pip install -r "$GPU_DIR/requirements.txt"
 
   if [ ! -x "$LIVEPORTRAIT_ROOT/.venv/bin/python" ]; then
-    LIVEPORTRAIT_ROOT="$LIVEPORTRAIT_ROOT" PYTHON_BIN="$PYTHON_BIN" \
-      bash "$GPU_DIR/scripts/setup-liveportrait-macos.sh"
+    if [ "$(uname -s)" = "Linux" ]; then
+      setup_script="$GPU_DIR/scripts/setup-liveportrait-linux.sh"
+    else
+      setup_script="$GPU_DIR/scripts/setup-liveportrait-macos.sh"
+    fi
+    LIVEPORTRAIT_ROOT="$LIVEPORTRAIT_ROOT" PYTHON_BIN="$PYTHON_BIN" bash "$setup_script"
   fi
 fi
 

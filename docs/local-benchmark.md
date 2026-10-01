@@ -25,6 +25,18 @@ make doctor PLATFORM=ubuntu
 make run PLATFORM=ubuntu
 ```
 
+Without `make`, run these two commands from the repository root:
+
+```bash
+bash api-server/scripts/setup-ubuntu.sh
+AVATAR_SKIP_SETUP=1 bash api-server/scripts/dev-stack.sh
+```
+
+The second command starts a fresh local session each time, clearing old jobs,
+queue messages and generated outputs. From another computer, connect with an
+SSH tunnel (`ssh -L 5173:127.0.0.1:5173 -L 8000:127.0.0.1:8000 user@server`)
+and open `http://127.0.0.1:5173` in the local browser.
+
 ## Browser benchmark
 
 Open `http://127.0.0.1:5173`, upload one image, choose expressions, then use the
@@ -47,7 +59,7 @@ Local mode stores job records, queue messages, input files and output files unde
 Docker is optional for later Ubuntu reproducibility. It is not required for the
 native macOS or Ubuntu benchmark flow.
 
-`make run` starts a fresh local session. It clears local jobs, queue messages,
+`make run` and the direct dev stack command start a fresh local session. They clear local jobs, queue messages,
 temporary work and generated outputs before starting the services. The
 LivePortrait model cache and virtual environments are kept, so this reset does
 not reinstall the model.
