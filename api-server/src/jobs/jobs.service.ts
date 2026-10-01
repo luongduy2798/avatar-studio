@@ -48,6 +48,7 @@ export class JobsService {
       file.mimetype,
     )
     const job: GenerationJob = {
+      kind: 'generation',
       jobId,
       status: 'queued',
       stage: 'queued',
@@ -68,6 +69,7 @@ export class JobsService {
     try {
       await this.queue.publish({
         version: 1,
+        kind: 'generation',
         jobId,
         inputKey,
         expressions,
@@ -88,6 +90,7 @@ export class JobsService {
   async get(jobId: string) {
     const job = await this.jobStore.get(jobId)
     if (!job) throw new NotFoundException('Generation job not found')
+    if (job.kind === 'benchmark') throw new NotFoundException('Generation job not found')
     return this.toResponse(job)
   }
 

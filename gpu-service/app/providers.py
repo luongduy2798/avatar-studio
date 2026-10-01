@@ -83,6 +83,8 @@ class LivePortraitProvider:
         self._ready = False
         self._startup_error: str | None = None
         self._device: str | None = None
+        self._gpu_name: str | None = None
+        self._peak_memory_mb: float | None = None
         self._lifecycle_lock = threading.RLock()
         self._io_lock = threading.Lock()
         self._slots = threading.BoundedSemaphore(settings.worker_queue_size + 1)
@@ -125,6 +127,16 @@ class LivePortraitProvider:
     def device(self) -> str | None:
         with self._lifecycle_lock:
             return self._device
+
+    @property
+    def gpu_name(self) -> str | None:
+        with self._lifecycle_lock:
+            return self._gpu_name
+
+    @property
+    def peak_memory_mb(self) -> float | None:
+        with self._lifecycle_lock:
+            return self._peak_memory_mb
 
     def _readline(self, timeout: float) -> str:
         process = self._process
@@ -232,6 +244,10 @@ class LivePortraitProvider:
                 if ready_payload is None:
                     raise TimeoutError("LivePortrait worker startup timed out.")
                 self._device = str(ready_payload.get("device", "unknown"))
+                raw_gpu_name = ready_payload.get("gpu_name")
+                self._gpu_name = str(raw_gpu_name) if raw_gpu_name else None
+                raw_peak_memory = ready_payload.get("peak_memory_mb")
+                self._peak_memory_mb = float(raw_peak_memory) if isinstance(raw_peak_memory, (int, float)) else None
                 self._ready = True
             except Exception as exc:
                 self._startup_error = str(exc)
@@ -262,6 +278,11 @@ class LivePortraitProvider:
                 ) from exc
             if not isinstance(response, dict):
                 raise ExpressionGenerationError("LivePortrait worker returned an invalid response.")
+            runtime = response.get("runtime")
+            if isinstance(runtime, dict):
+                peak_memory = runtime.get("peak_memory_mb")
+                if isinstance(peak_memory, (int, float)):
+                    self._peak_memory_mb = float(peak_memory)
             return response
 
     def generate_many(

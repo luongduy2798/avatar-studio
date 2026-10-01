@@ -479,6 +479,128 @@ a:focus-visible {
   transition: width 220ms ease;
 }
 
+.benchmark-panel {
+  margin-top: 24px;
+}
+
+.benchmark-note {
+  color: var(--muted, #827a70);
+  font-size: 0.78rem;
+}
+
+.benchmark-controls {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.benchmark-controls label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted, #827a70);
+  font-size: 0.78rem;
+}
+
+.benchmark-controls input {
+  width: 130px;
+  border: 1px solid var(--line, #ded7cc);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--paper, #fffdf9);
+  color: inherit;
+  font: inherit;
+}
+
+.benchmark-button {
+  margin-bottom: 18px;
+}
+
+.benchmark-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.benchmark-summary > div {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line, #ded7cc);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.benchmark-summary span {
+  color: var(--muted, #827a70);
+  font-size: 0.72rem;
+}
+
+.benchmark-actions {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.benchmark-table-wrap {
+  overflow-x: auto;
+}
+
+.benchmark-footnote {
+  margin: 10px 0 0;
+  color: var(--muted, #8d939d);
+  font-size: 12px;
+}
+
+.benchmark-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.benchmark-table th,
+.benchmark-table td {
+  border-bottom: 1px solid var(--line, #ded7cc);
+  padding: 9px 7px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.benchmark-table th {
+  color: var(--muted, #827a70);
+  font-weight: 600;
+}
+
+.benchmark-gallery {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.benchmark-job-gallery {
+  display: grid;
+  gap: 9px;
+}
+
+.benchmark-job-gallery > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.benchmark-job-gallery img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #ece7de;
+}
+
+@media (max-width: 760px) {
+  .benchmark-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .results-section {
   padding-top: 58px;
 }

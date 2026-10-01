@@ -242,6 +242,15 @@ class GenerationEngine:
         self.portrait_matte = PortraitMatte(hair_matte_path, execution_provider=onnx_provider)
         self.wrapper = LivePortraitWrapper(inference_cfg)
         self.device = self.wrapper.device
+        if self.use_cuda:
+            self.gpu_name = torch.cuda.get_device_name(0)
+            self.peak_memory_mb = None
+        elif self.use_mps:
+            self.gpu_name = "Apple GPU"
+            self.peak_memory_mb = None
+        else:
+            self.gpu_name = "CPU"
+            self.peak_memory_mb = None
         landmark_path = Path(inference_cfg.checkpoint_M).parents[1] / "landmark.onnx"
         self.landmark_runner = LandmarkRunner(
             ckpt_path=str(landmark_path),
@@ -536,6 +545,16 @@ class GenerationEngine:
         record_timing(progress_name, "total", time.perf_counter() - prepared.total_start)
         return outputs
 
+    def _update_peak_memory(self) -> None:
+        if self.use_cuda:
+            self.peak_memory_mb = round(torch.cuda.max_memory_reserved() / (1024 * 1024), 1)
+        elif self.use_mps:
+            allocated = torch.mps.current_allocated_memory() / (1024 * 1024)
+            driver_memory = getattr(torch.mps, "driver_allocated_memory", None)
+            if callable(driver_memory):
+                allocated = driver_memory() / (1024 * 1024)
+            self.peak_memory_mb = round(float(allocated), 1)
+
     def generate_batch(
         self,
         requests: list[dict[str, object]],
@@ -570,6 +589,7 @@ class GenerationEngine:
                     except Exception as exc:
                         results[index] = exc
 
+        self._update_peak_memory()
         return [
             item if item is not None else RuntimeError("Generation did not produce a result.")
             for item in results
@@ -625,6 +645,8 @@ def run_daemon(args: argparse.Namespace) -> int:
         protocol_out.write(json.dumps({
             "event": "ready",
             "device": engine.device,
+            "gpu_name": engine.gpu_name,
+            "peak_memory_mb": engine.peak_memory_mb,
             "decode_batch_size": engine.decode_batch_size,
         }) + "\n")
         protocol_out.flush()
@@ -656,6 +678,7 @@ def run_daemon(args: argparse.Namespace) -> int:
                 response = {
                     "ok": True,
                     "outputs": {name: str(path) for name, path in outputs.items()},
+                    "runtime": {"peak_memory_mb": engine.peak_memory_mb},
                 }
             elif command == "generate_batch":
                 raw_requests = payload.get("requests")
@@ -678,6 +701,7 @@ def run_daemon(args: argparse.Namespace) -> int:
                         )
                         for item in batch_results
                     ],
+                    "runtime": {"peak_memory_mb": engine.peak_memory_mb},
                 }
             else:
                 raise ValueError(f"unsupported worker command: {command}")

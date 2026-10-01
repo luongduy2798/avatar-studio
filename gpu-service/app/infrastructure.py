@@ -40,7 +40,10 @@ class LocalJobStore:
         return json.loads(path.read_text(encoding="utf-8"))
 
     def put(self, job: dict[str, Any]) -> None:
-        _atomic_json_write(self._path(str(job["jobId"])), job)
+        record_id = job.get("jobId") or job.get("runId")
+        if not record_id:
+            raise KeyError("Job record must contain jobId or runId")
+        _atomic_json_write(self._path(str(record_id)), job)
 
 
 class DynamoDbJobStore:
@@ -59,9 +62,12 @@ class DynamoDbJobStore:
         return json.loads(str(item["payload"]))
 
     def put(self, job: dict[str, Any]) -> None:
+        record_id = job.get("jobId") or job.get("runId")
+        if not record_id:
+            raise KeyError("Job record must contain jobId or runId")
         self.table.put_item(
             Item={
-                "jobId": str(job["jobId"]),
+                "jobId": str(record_id),
                 "payload": json.dumps(job, ensure_ascii=False),
                 "updatedAt": str(job.get("updatedAt", "")),
             }
@@ -139,7 +145,22 @@ class LocalQueue:
         for path in (self.pending, self.processing, self.dlq):
             path.mkdir(parents=True, exist_ok=True)
 
+    def _recover_stale_processing(self) -> None:
+        """Return messages left behind by a crashed local worker to pending."""
+        now = time.time()
+        for source in self.processing.glob("*.json"):
+            try:
+                if now - source.stat().st_mtime <= 120:
+                    continue
+                body = json.loads(source.read_text(encoding="utf-8"))
+                body["receiveCount"] = int(body.get("receiveCount", 1)) + 1
+                _atomic_json_write(source, body)
+                source.replace(self.pending / source.name)
+            except (FileNotFoundError, json.JSONDecodeError, OSError, ValueError):
+                continue
+
     def receive(self) -> QueueMessage | None:
+        self._recover_stale_processing()
         for source in sorted(self.pending.glob("*.json")):
             claimed = self.processing / source.name
             try:
@@ -191,7 +212,7 @@ class LocalQueue:
             source.replace(self.dlq / source.name)
 
     def heartbeat(self, message: QueueMessage) -> None:
-        return
+        Path(message.receipt).touch(exist_ok=True)
 
 
 class SqsQueue:

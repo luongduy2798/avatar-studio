@@ -2,10 +2,10 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs'
 import type { AppConfig } from '../config'
-import type { GenerationMessage } from '../domain'
+import type { QueuePayload } from '../domain'
 
 export interface GenerationQueue {
-  publish(message: GenerationMessage): Promise<void>
+  publish(message: QueuePayload): Promise<void>
 }
 
 export class LocalGenerationQueue implements GenerationQueue {
@@ -15,9 +15,10 @@ export class LocalGenerationQueue implements GenerationQueue {
     this.root = path.join(config.runtimeRoot, 'queue', 'pending')
   }
 
-  async publish(message: GenerationMessage) {
+  async publish(message: QueuePayload) {
     await fs.mkdir(this.root, { recursive: true })
-    const target = path.join(this.root, message.jobId + '.json')
+    const id = message.kind === 'benchmark' ? 'benchmark-' + message.runId : message.jobId
+    const target = path.join(this.root, id + '.json')
     const temporary = target + '.' + process.pid + '.tmp'
     await fs.writeFile(
       temporary,
@@ -38,7 +39,7 @@ export class SqsGenerationQueue implements GenerationQueue {
     this.client = new SQSClient({ region: config.awsRegion })
   }
 
-  async publish(message: GenerationMessage) {
+  async publish(message: QueuePayload) {
     await this.client.send(
       new SendMessageCommand({
         QueueUrl: this.queueUrl,

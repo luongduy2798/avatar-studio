@@ -8,6 +8,7 @@ WEB_DIR="$ROOT/web-client"
 PYTHON_BIN="${PYTHON_BIN:-python3.10}"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
 AVATAR_SKIP_SETUP="${AVATAR_SKIP_SETUP:-0}"
+AVATAR_RESET_RUNTIME="${AVATAR_RESET_RUNTIME:-1}"
 
 API_PID=""
 GPU_PID=""
@@ -39,6 +40,15 @@ if [ "$AVATAR_SKIP_SETUP" != "1" ]; then
     LIVEPORTRAIT_ROOT="$LIVEPORTRAIT_ROOT" PYTHON_BIN="$PYTHON_BIN" \
       bash "$GPU_DIR/scripts/setup-liveportrait-macos.sh"
   fi
+fi
+
+if [ "$AVATAR_RESET_RUNTIME" = "1" ]; then
+  echo "Resetting local runtime state..."
+  for runtime_path in jobs queue storage work outputs; do
+    rm -rf -- "$GPU_DIR/.runtime/$runtime_path"
+  done
+  mkdir -p "$GPU_DIR/.runtime"
+  : > "$GPU_DIR/.runtime/liveportrait-worker.log"
 fi
 
 export AVATAR_INFRA_MODE=local

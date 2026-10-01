@@ -3,11 +3,11 @@ import path from 'node:path'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import type { AppConfig } from '../config'
-import type { GenerationJob } from '../domain'
+import type { JobRecord } from '../domain'
 
 export interface JobStore {
-  get(jobId: string): Promise<GenerationJob | null>
-  put(job: GenerationJob): Promise<void>
+  get(jobId: string): Promise<JobRecord | null>
+  put(job: JobRecord): Promise<void>
 }
 
 export class LocalJobStore implements JobStore {
@@ -23,16 +23,17 @@ export class LocalJobStore implements JobStore {
 
   async get(jobId: string) {
     try {
-      return JSON.parse(await fs.readFile(this.file(jobId), 'utf8')) as GenerationJob
+      return JSON.parse(await fs.readFile(this.file(jobId), 'utf8')) as JobRecord
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
       throw error
     }
   }
 
-  async put(job: GenerationJob) {
+  async put(job: JobRecord) {
     await fs.mkdir(this.root, { recursive: true })
-    const target = this.file(job.jobId)
+    const recordId = 'jobId' in job ? job.jobId : job.runId
+    const target = this.file(recordId)
     const temporary = target + '.' + process.pid + '.tmp'
     await fs.writeFile(temporary, JSON.stringify(job, null, 2), 'utf8')
     await fs.rename(temporary, target)
@@ -54,15 +55,15 @@ export class DynamoDbJobStore implements JobStore {
       new GetCommand({ TableName: this.tableName, Key: { jobId }, ConsistentRead: true }),
     )
     if (!response.Item) return null
-    return JSON.parse(String(response.Item.payload)) as GenerationJob
+    return JSON.parse(String(response.Item.payload)) as JobRecord
   }
 
-  async put(job: GenerationJob) {
+  async put(job: JobRecord) {
     await this.client.send(
       new PutCommand({
         TableName: this.tableName,
         Item: {
-          jobId: job.jobId,
+          jobId: 'jobId' in job ? job.jobId : job.runId,
           payload: JSON.stringify(job),
           updatedAt: job.updatedAt,
         },

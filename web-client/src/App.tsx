@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import {
   downloadExpression,
+  downloadBenchmarkReport,
   generateExpressions,
   getBackendHealth,
+  runBenchmark,
   type ExpressionId,
+  type BenchmarkResponse,
   type GeneratedExpression,
   type GenerationProgress,
 } from './lib/api'
@@ -31,6 +34,10 @@ function App() {
   const [backendHealth, setBackendHealth] = useState<Awaited<ReturnType<typeof getBackendHealth>>>(null)
   const [backendChecked, setBackendChecked] = useState(false)
   const [showTransparency, setShowTransparency] = useState(false)
+  const [benchmarkBatchSize, setBenchmarkBatchSize] = useState(1)
+  const [benchmarkRuns, setBenchmarkRuns] = useState(3)
+  const [benchmarkBusy, setBenchmarkBusy] = useState(false)
+  const [benchmarkRun, setBenchmarkRun] = useState<BenchmarkResponse | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const busy = status === 'generating'
 
@@ -45,7 +52,7 @@ function App() {
 
   const generatorLabel = 'LivePortrait'
   const apiReady = backendHealth?.status === 'ready'
-  const canGenerate = status === 'ready' && sourceFile !== null && selected.length > 0 && apiReady
+  const canGenerate = status === 'ready' && sourceFile !== null && selected.length > 0 && apiReady && !benchmarkBusy
   const statusLabel = useMemo(() => {
     if (!backendChecked) return 'Checking backend'
     if (backendHealth === null) return 'Backend unavailable'
@@ -54,7 +61,7 @@ function App() {
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    if (!file || busy) return
+    if (!file || busy || benchmarkBusy) return
 
     setGenerationProgress(null)
     setOutputs([])
@@ -94,6 +101,30 @@ function App() {
     }
   }
 
+  async function handleBenchmark() {
+    if (!sourceFile || !apiReady || benchmarkBusy || busy) return
+    setBenchmarkBusy(true)
+    setBenchmarkRun(null)
+    setMessage('Đang chạy warmup và benchmark batch trên GPU…')
+    try {
+      const result = await runBenchmark(
+        sourceFile,
+        selected,
+        intensity,
+        benchmarkBatchSize,
+        1,
+        benchmarkRuns,
+        setBenchmarkRun,
+      )
+      setBenchmarkRun(result)
+      setMessage(`Benchmark hoàn tất: ${result.metrics.successfulJobs}/${result.metrics.measuredJobs} measured jobs thành công.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Benchmark thất bại.')
+    } finally {
+      setBenchmarkBusy(false)
+    }
+  }
+
   return (
     <main className="page-shell">
       <header className="topbar">
@@ -125,7 +156,7 @@ function App() {
               <span className="step">01</span>
               <h2>Selfie input</h2>
             </div>
-            <button className="text-button" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+            <button className="text-button" disabled={busy || benchmarkBusy} onClick={() => fileInputRef.current?.click()}>
               Replace
             </button>
           </div>
@@ -135,11 +166,11 @@ function App() {
             className="visually-hidden"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            disabled={busy}
+            disabled={busy || benchmarkBusy}
             onChange={handleFile}
           />
 
-          <button className="dropzone" disabled={busy} onClick={() => fileInputRef.current?.click()}>
+          <button className="dropzone" disabled={busy || benchmarkBusy} onClick={() => fileInputRef.current?.click()}>
             {sourceUrl ? (
               <img src={sourceUrl} alt="Uploaded selfie" />
             ) : (
@@ -173,7 +204,7 @@ function App() {
               max="1.4"
               step="0.1"
               value={intensity}
-              disabled={busy}
+              disabled={busy || benchmarkBusy}
               onChange={(event) => setIntensity(Number(event.target.value))}
             />
           </label>
@@ -191,7 +222,7 @@ function App() {
                 key={expression.id}
                 className={`expression-button ${active ? 'is-active' : ''}`}
                 aria-pressed={active}
-                disabled={busy}
+                disabled={busy || benchmarkBusy}
                 onClick={() => toggleExpression(expression.id)}
               >
                 <span>{expression.glyph}</span>
@@ -213,6 +244,94 @@ function App() {
           <div className="generation-progress" aria-label="Generation progress">
             <div style={{ width: `${generationProgress.percent}%` }} />
           </div>
+        )}
+      </section>
+
+      <section className="panel benchmark-panel">
+        <div className="panel-heading controls-heading">
+          <div>
+            <span className="step">03</span>
+            <h2>Batch benchmark</h2>
+          </div>
+          <span className="benchmark-note">1 warmup job · đo batch thật sau warmup</span>
+        </div>
+        <div className="benchmark-controls">
+          <label>
+            <span>Số jobs / batch</span>
+            <input
+              type="number"
+              min="1"
+              max="64"
+              value={benchmarkBatchSize}
+              disabled={benchmarkBusy || busy}
+              onChange={(event) => setBenchmarkBatchSize(Math.max(1, Math.min(64, Number(event.target.value) || 1)))}
+            />
+          </label>
+          <label>
+            <span>Số measured runs</span>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={benchmarkRuns}
+              disabled={benchmarkBusy || busy}
+              onChange={(event) => setBenchmarkRuns(Math.max(1, Math.min(10, Number(event.target.value) || 1)))}
+            />
+          </label>
+        </div>
+        <button className="generate-button benchmark-button" disabled={!sourceFile || selected.length === 0 || !apiReady || busy || benchmarkBusy} onClick={handleBenchmark}>
+          {benchmarkBusy && benchmarkRun
+            ? `Đang benchmark ${benchmarkRun.progress.completedJobs}/${benchmarkRun.progress.totalJobs} jobs · ${benchmarkRun.progress.percent}%`
+            : `Chạy benchmark ${benchmarkBatchSize} jobs`}
+        </button>
+        {benchmarkBusy && benchmarkRun && (
+          <div className="generation-progress" aria-label="Benchmark progress">
+            <div style={{ width: `${benchmarkRun.progress.percent}%` }} />
+          </div>
+        )}
+        {benchmarkRun && (
+          <>
+            <div className="benchmark-summary">
+              <div><span>Status</span><strong>{benchmarkRun.status}</strong></div>
+              <div><span>Total · incl. warmup</span><strong>{benchmarkRun.metrics.totalSeconds?.toFixed(2) ?? '—'}s</strong></div>
+              <div><span>Measured batch</span><strong>{benchmarkRun.metrics.measuredSeconds?.toFixed(2) ?? '—'}s</strong></div>
+              <div><span>Jobs/s · measured</span><strong>{benchmarkRun.metrics.jobsPerSecond?.toFixed(2) ?? '—'}</strong></div>
+              <div><span>p95</span><strong>{benchmarkRun.metrics.p95Seconds?.toFixed(2) ?? '—'}s</strong></div>
+              <div><span>Device</span><strong>{benchmarkRun.metrics.device ?? '—'}</strong></div>
+              <div><span>GPU</span><strong>{benchmarkRun.metrics.gpuName ?? '—'}</strong></div>
+            </div>
+            <div className="benchmark-actions">
+              <button className="text-button" onClick={() => void downloadBenchmarkReport(benchmarkRun.run_id, 'json')}>JSON ↗</button>
+              <button className="text-button" onClick={() => void downloadBenchmarkReport(benchmarkRun.run_id, 'csv')}>CSV ↗</button>
+            </div>
+            <div className="benchmark-table-wrap">
+              <table className="benchmark-table">
+                <thead><tr><th>Phase</th><th>Run</th><th>Job</th><th>Status</th><th>Progress</th><th>Job elapsed</th><th>Error</th></tr></thead>
+                <tbody>
+                  {benchmarkRun.jobs.map((job) => (
+                    <tr key={job.job_id}>
+                      <td>{job.phase}</td>
+                      <td>{job.repetition}</td>
+                      <td>#{job.job_index}</td>
+                      <td>{job.status}</td>
+                      <td>{job.completed_count}/{job.total}</td>
+                      <td>{job.timings.total?.toFixed(2) ?? '—'}s</td>
+                      <td>{job.error ?? ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="benchmark-footnote">Measured batch là thời gian thực của cả batch. Job elapsed là thời gian từng job nằm trong batch, nên các dòng không cộng lại thành tổng.</p>
+            <div className="benchmark-gallery">
+              {benchmarkRun.jobs.filter((job) => job.phase === 'measure' && job.outputs.length > 0).map((job) => (
+                <div className="benchmark-job-gallery" key={job.job_id}>
+                  <strong>Run {job.repetition} · Job {job.job_index}</strong>
+                  <div>{job.outputs.map((output) => <img key={output.expression} src={output.url} alt={`${output.expression} job ${job.job_index}`} />)}</div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

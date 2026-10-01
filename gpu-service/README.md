@@ -28,3 +28,32 @@ LIVEPORTRAIT_ROOT="$HOME/.cache/avatar-studio/LivePortrait" \
   --source .runtime/outputs/<job>/input/source.jpg \
   --cases 1:1,1:6,2:12,4:24
 ```
+
+## Local batch benchmark
+
+The browser benchmark uses one uploaded image and creates one warmup child job,
+then N independent child jobs per measured batch. Each child runs the same
+expression set without reusing prepared features; the provider can decode the
+measured jobs together. The default is one warmup job followed by three
+measured batches. Use measured batch wall time and measured jobs/s to compare
+throughput; total time includes warmup. Results show per-job progress, stage
+timings, output PNGs and can be downloaded as JSON/CSV.
+
+On macOS:
+
+```bash
+make setup
+make doctor
+make run
+```
+
+On Ubuntu with NVIDIA CUDA:
+
+```bash
+make setup PLATFORM=ubuntu
+make doctor PLATFORM=ubuntu
+make run PLATFORM=ubuntu
+```
+
+Open `http://127.0.0.1:5173`, upload one image, then use **Batch benchmark**.
+Docker is optional for Ubuntu and is not required on macOS.

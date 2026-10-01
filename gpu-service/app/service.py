@@ -90,3 +90,13 @@ class ExpressionService:
                 for expression in request.expressions
             ])
         return results
+
+    def runtime_metadata(self) -> dict[str, object]:
+        provider = self.providers.get("liveportrait")
+        if provider is None:
+            return {}
+        return {
+            "device": getattr(provider, "device", None),
+            "gpuName": getattr(provider, "gpu_name", None),
+            "peakMemoryMb": getattr(provider, "peak_memory_mb", None),
+        }
