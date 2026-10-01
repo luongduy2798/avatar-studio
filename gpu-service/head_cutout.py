@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
 import onnxruntime as ort
+
+
+def _onnx_thread_count() -> int:
+    try:
+        return max(1, int(os.getenv("AVATAR_ONNX_THREADS", "4")))
+    except ValueError:
+        return 4
 
 
 def _onnx_providers(execution_provider: str | None) -> list[str]:
@@ -46,7 +54,7 @@ class PortraitMatte:
         if not model_path.is_file():
             raise RuntimeError("Thiếu model matting tóc. Chạy make setup trước khi tạo biểu cảm.")
         options = ort.SessionOptions()
-        options.intra_op_num_threads = 4
+        options.intra_op_num_threads = _onnx_thread_count()
         self.session = ort.InferenceSession(
             str(model_path),
             sess_options=options,
@@ -93,7 +101,7 @@ class HeadSegmenter:
         if not model_path.is_file():
             raise RuntimeError("Thiếu model tách đầu. Chạy make setup trước khi tạo biểu cảm.")
         options = ort.SessionOptions()
-        options.intra_op_num_threads = 4
+        options.intra_op_num_threads = _onnx_thread_count()
         self.session = ort.InferenceSession(
             str(model_path),
             sess_options=options,
