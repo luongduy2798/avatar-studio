@@ -6,8 +6,15 @@ API_DIR="$ROOT/api-server"
 GPU_DIR="$ROOT/gpu-service"
 WEB_DIR="$ROOT/web-client"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
-AVATAR_SKIP_SETUP="${AVATAR_SKIP_SETUP:-0}"
+# Setup is an explicit command; dev-stack only starts services by default.
+# Set AVATAR_SKIP_SETUP=0 only when intentionally bootstrapping dependencies.
+AVATAR_SKIP_SETUP="${AVATAR_SKIP_SETUP:-1}"
 AVATAR_RESET_RUNTIME="${AVATAR_RESET_RUNTIME:-1}"
+# Keep local benchmark runs comparable across macOS and Ubuntu. These remain
+# overridable for capacity experiments.
+export AVATAR_ONNX_DEVICE="${AVATAR_ONNX_DEVICE:-cpu}"
+export AVATAR_ONNX_THREADS="${AVATAR_ONNX_THREADS:-16}"
+export AVATAR_DECODE_BATCH_SIZE="${AVATAR_DECODE_BATCH_SIZE:-24}"
 
 if [ -z "${PYTHON_BIN:-}" ]; then
   if command -v python3.10 >/dev/null 2>&1; then
@@ -82,4 +89,5 @@ echo "Avatar Studio:"
 echo "  web: http://127.0.0.1:5173"
 echo "  api: http://127.0.0.1:8000"
 echo "  gpu: local worker pid $GPU_PID"
+echo "  pipeline: ONNX $AVATAR_ONNX_DEVICE, ${AVATAR_ONNX_THREADS} threads, decode batch $AVATAR_DECODE_BATCH_SIZE"
 wait
