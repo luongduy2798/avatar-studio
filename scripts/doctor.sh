@@ -3,6 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
+# WSL exposes the Windows NVIDIA driver through this directory instead of the
+# normal Linux PATH. Keep the doctor output and setup detection consistent.
+if [ -d /usr/lib/wsl/lib ] && [[ ":$PATH:" != *":/usr/lib/wsl/lib:"* ]]; then
+  export PATH="/usr/lib/wsl/lib:$PATH"
+fi
 if [ -z "${PYTHON_BIN:-}" ]; then
   if command -v python3.10 >/dev/null 2>&1; then
     PYTHON_BIN=python3.10
