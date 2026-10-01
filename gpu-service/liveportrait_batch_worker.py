@@ -204,8 +204,13 @@ class GenerationEngine:
         decode_batch_size: int = 0,
     ) -> None:
         self.use_cuda = bool(torch.cuda.is_available())
+        onnx_device = os.getenv("AVATAR_ONNX_DEVICE", "auto").strip().lower()
+        if onnx_device not in {"auto", "cuda", "cpu"}:
+            raise ValueError("AVATAR_ONNX_DEVICE must be auto, cuda, or cpu")
         self.onnx_use_cuda = bool(
-            self.use_cuda and "CUDAExecutionProvider" in ort.get_available_providers()
+            onnx_device != "cpu"
+            and self.use_cuda
+            and "CUDAExecutionProvider" in ort.get_available_providers()
         )
         self.use_mps = bool(torch.backends.mps.is_available())
         self.decode_batch_size = max(
