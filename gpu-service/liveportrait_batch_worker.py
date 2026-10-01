@@ -285,6 +285,11 @@ class GenerationEngine:
         if self.use_cuda:
             torch.cuda.synchronize()
 
+    def _synchronize_cuda(self) -> None:
+        """Include pending CUDA/ONNX work in the stage that caused it."""
+        if self.use_cuda:
+            torch.cuda.synchronize()
+
     def _decode_chunk(
         self,
         source_feature: torch.Tensor,
@@ -356,6 +361,7 @@ class GenerationEngine:
             raise RuntimeError(f"Could not read source image: {source_path}")
         original_rgb = cv2.cvtColor(source_bgr, cv2.COLOR_BGR2RGB)
 
+        self._synchronize_cuda()
         stage_start = time.perf_counter()
         crop_result = self.cropper.crop_source_image(original_rgb, self.crop_cfg)
         if crop_result is None:
@@ -390,15 +396,19 @@ class GenerationEngine:
                     (self.crop_cfg.dsize, self.crop_cfg.dsize),
                     interpolation=interpolation,
                 )
+        self._synchronize_cuda()
         record_timing(progress_name, "crop", time.perf_counter() - stage_start)
 
+        self._synchronize_cuda()
         stage_start = time.perf_counter()
         source_alpha = self.portrait_matte.matte(source_rgb)
         source_rgba = self.segmenter.cutout(source_rgb, source_alpha)
         clean_source_rgb = composite_rgba(source_rgba, NEUTRAL_BACKGROUND)
         source_256 = cv2.resize(clean_source_rgb, (256, 256), interpolation=cv2.INTER_AREA)
+        self._synchronize_cuda()
         record_timing(progress_name, "matte_and_source_cutout", time.perf_counter() - stage_start)
 
+        self._synchronize_cuda()
         stage_start = time.perf_counter()
         source_tensor = self.wrapper.prepare_source(source_256)
         source_info = self.wrapper.get_kp_info(source_tensor)
@@ -420,6 +430,7 @@ class GenerationEngine:
             lip_correction = self.wrapper.retarget_lip(source_keypoints, lip_input)
         zero = torch.zeros_like(source_info["pitch"])
         frontal_rotation = get_rotation_matrix(zero, zero, zero).to(self.device)
+        self._synchronize_cuda()
         record_timing(progress_name, "feature_and_landmarks", time.perf_counter() - stage_start)
 
         stage_start = time.perf_counter()
@@ -484,6 +495,7 @@ class GenerationEngine:
         generated: list[list[np.ndarray | None]] = [
             [None] * len(item.expressions) for item in prepared
         ]
+        self._synchronize_cuda()
         stage_start = time.perf_counter()
         for start in range(0, len(positions), self.decode_batch_size):
             stop = min(start + self.decode_batch_size, len(positions))
@@ -502,6 +514,7 @@ class GenerationEngine:
                     len(item.expressions),
                     "prepared",
                 )
+        self._synchronize_cuda()
         decode_duration = time.perf_counter() - stage_start
         for item in prepared:
             record_timing(item.progress_name, "decode", decode_duration)
@@ -521,6 +534,7 @@ class GenerationEngine:
         expressions = prepared.expressions
         output_root = prepared.output_root
         progress_name = prepared.progress_name
+        self._synchronize_cuda()
         stage_start = time.perf_counter()
         reference_index = expressions.index("unbothered") if "unbothered" in expressions else 0
         shared_template = self.segmenter.make_shared_template(
@@ -546,6 +560,7 @@ class GenerationEngine:
                 raise RuntimeError(f"Could not save generated image: {output_path}")
             outputs[expression] = output_path
             mark_progress(progress_name, expression, len(expressions), "completed")
+        self._synchronize_cuda()
         record_timing(progress_name, "parser_and_export", time.perf_counter() - stage_start)
         record_timing(progress_name, "total", time.perf_counter() - prepared.total_start)
         return outputs
