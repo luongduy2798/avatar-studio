@@ -22,10 +22,11 @@ Create a Python 3.10 virtual environment, install requirements.txt, then run:
 To benchmark multi-user capacity with an existing sample image:
 
 ```bash
+cd /path/to/avatar-studio
 LIVEPORTRAIT_ROOT="$HOME/.cache/avatar-studio/LivePortrait" \
 "$HOME/.cache/avatar-studio/LivePortrait/.venv/bin/python" \
   scripts/benchmark_capacity.py \
-  --source .runtime/outputs/<job>/input/source.jpg \
+  --source gpu-service/.runtime/outputs/<job>/input/source.jpg \
   --cases 1:1,1:6,2:12,4:24
 ```
 

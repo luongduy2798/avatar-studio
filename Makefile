@@ -52,17 +52,17 @@ setup-gpu:
 setup-liveportrait:
 	@if [ "$(PLATFORM)" = "macos" ]; then \
 		LIVEPORTRAIT_ROOT="$(LIVEPORTRAIT_ROOT)" PYTHON_BIN="$(PYTHON_BIN)" \
-			bash "$(GPU_DIR)/scripts/setup-liveportrait-macos.sh"; \
+			bash "$(ROOT)/scripts/setup-liveportrait-macos.sh"; \
 	elif [ "$(PLATFORM)" = "ubuntu" ]; then \
 		LIVEPORTRAIT_ROOT="$(LIVEPORTRAIT_ROOT)" PYTHON_BIN="$(PYTHON_BIN)" \
-			bash "$(GPU_DIR)/scripts/setup-liveportrait-linux.sh"; \
+			bash "$(ROOT)/scripts/setup-liveportrait-linux.sh"; \
 	else \
 		echo "Unsupported platform: $(PLATFORM). Use macOS or Ubuntu." >&2; exit 1; \
 	fi
 
 doctor:
 	LIVEPORTRAIT_ROOT="$(LIVEPORTRAIT_ROOT)" PYTHON_BIN="$(PYTHON_BIN)" \
-		bash "$(GPU_DIR)/scripts/doctor.sh"
+		bash "$(ROOT)/scripts/doctor.sh"
 
 check-setup:
 	@test -d "$(API_DIR)/node_modules" || { echo 'Missing api-server/node_modules. Run: make setup' >&2; exit 1; }
@@ -72,6 +72,6 @@ check-setup:
 
 run: check-setup
 	AVATAR_SKIP_SETUP=1 AVATAR_RESET_RUNTIME=1 PYTHON_BIN="$(PYTHON_BIN)" LIVEPORTRAIT_ROOT="$(LIVEPORTRAIT_ROOT)" \
-		bash "$(API_DIR)/scripts/dev-stack.sh"
+		bash "$(ROOT)/scripts/dev-stack.sh"
 
 dev: run

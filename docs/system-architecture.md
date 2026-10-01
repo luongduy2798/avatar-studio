@@ -298,7 +298,7 @@ Hiện local adapters dùng shared runtime dưới `gpu-service/.runtime` để 
 Chạy toàn bộ local stack:
 
 ```bash
-bash api-server/scripts/dev-stack.sh
+bash scripts/dev-stack.sh
 ```
 
 ## 9. Deployment boundary

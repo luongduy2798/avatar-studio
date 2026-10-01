@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
-PYTHON_BIN="${PYTHON_BIN:-python3.10}"
+if [ -z "${PYTHON_BIN:-}" ]; then
+  if command -v python3.10 >/dev/null 2>&1; then
+    PYTHON_BIN=python3.10
+  else
+    PYTHON_BIN=python3
+  fi
+fi
 
 echo "Avatar Studio doctor"
 echo "  OS: $(uname -s) $(uname -m)"
@@ -27,4 +33,28 @@ if [ -d "$LIVEPORTRAIT_ROOT/pretrained_weights" ]; then
   echo "  LivePortrait weights: directory found"
 else
   echo "  LivePortrait weights: missing"
+fi
+
+LIVEPORTRAIT_PYTHON="$LIVEPORTRAIT_ROOT/.venv/bin/python"
+if [ -x "$LIVEPORTRAIT_PYTHON" ]; then
+  LIVEPORTRAIT_PYTHON="$LIVEPORTRAIT_PYTHON" python3 - <<'PY'
+import os
+import subprocess
+import sys
+
+python_bin = os.environ["LIVEPORTRAIT_PYTHON"]
+try:
+    result = subprocess.run(
+        [python_bin, "-c", "import torch; print(torch.__version__); print(torch.version.cuda or 'cpu'); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    version, cuda, available, gpu = result.stdout.strip().splitlines()
+    print(f"  LivePortrait torch: {version} ({cuda})")
+    print(f"  CUDA available: {available}")
+    print(f"  CUDA device: {gpu}")
+except Exception as exc:
+    print(f"  LivePortrait torch: error ({exc})")
+PY
 fi

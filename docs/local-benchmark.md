@@ -28,8 +28,8 @@ make run PLATFORM=ubuntu
 Without `make`, run these two commands from the repository root:
 
 ```bash
-bash api-server/scripts/setup-ubuntu.sh
-AVATAR_SKIP_SETUP=1 bash api-server/scripts/dev-stack.sh
+bash scripts/setup-ubuntu.sh
+AVATAR_SKIP_SETUP=1 bash scripts/dev-stack.sh
 ```
 
 The second command starts a fresh local session each time, clearing old jobs,
@@ -37,8 +37,9 @@ queue messages and generated outputs. From another computer, connect with an
 SSH tunnel (`ssh -L 5173:127.0.0.1:5173 -L 8000:127.0.0.1:8000 user@server`)
 and open `http://127.0.0.1:5173` in the local browser.
 
-The Ubuntu setup installs PyTorch from the CUDA 12.1 wheel channel when
-`nvidia-smi` is available, and the CPU wheel channel otherwise. Set
+The Ubuntu setup installs PyTorch 2.7 from the CUDA 12.8 wheel channel when
+`nvidia-smi` is available, and the CPU wheel channel otherwise. This is needed
+for RTX 50-series Blackwell cards. Set
 `TORCH_INDEX_URL` to a different PyTorch channel when the server requires it.
 
 ## Browser benchmark

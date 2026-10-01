@@ -9,7 +9,7 @@ Run locally with npm install --package-lock=false and then npm run dev.
 
 Run the complete local stack from the repository root with:
 
-bash api-server/scripts/dev-stack.sh
+bash scripts/dev-stack.sh
 
 The local dev stack resets jobs, queues, temporary work and generated outputs
 when it starts. Model caches and virtual environments are kept.

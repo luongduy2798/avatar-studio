@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GPU_DIR="$ROOT/gpu-service"
 LIVEPORTRAIT_ROOT="${LIVEPORTRAIT_ROOT:-$HOME/.cache/avatar-studio/LivePortrait}"
 
@@ -25,6 +25,6 @@ fi
 "$GPU_DIR/.venv/bin/python" -m pip install -r "$GPU_DIR/requirements.txt"
 
 LIVEPORTRAIT_ROOT="$LIVEPORTRAIT_ROOT" PYTHON_BIN="$PYTHON_BIN" \
-  bash "$GPU_DIR/scripts/setup-liveportrait-linux.sh"
+  bash "$ROOT/scripts/setup-liveportrait-linux.sh"
 
 echo "Avatar Studio Ubuntu setup is ready."

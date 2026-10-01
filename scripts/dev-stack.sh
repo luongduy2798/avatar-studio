@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$ROOT/api-server"
 GPU_DIR="$ROOT/gpu-service"
 WEB_DIR="$ROOT/web-client"
@@ -49,9 +49,9 @@ if [ "$AVATAR_SKIP_SETUP" != "1" ]; then
 
   if [ ! -x "$LIVEPORTRAIT_ROOT/.venv/bin/python" ]; then
     if [ "$(uname -s)" = "Linux" ]; then
-      setup_script="$GPU_DIR/scripts/setup-liveportrait-linux.sh"
+      setup_script="$ROOT/scripts/setup-liveportrait-linux.sh"
     else
-      setup_script="$GPU_DIR/scripts/setup-liveportrait-macos.sh"
+      setup_script="$ROOT/scripts/setup-liveportrait-macos.sh"
     fi
     LIVEPORTRAIT_ROOT="$LIVEPORTRAIT_ROOT" PYTHON_BIN="$PYTHON_BIN" bash "$setup_script"
   fi

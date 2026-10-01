@@ -16,7 +16,8 @@ if sys.platform == "darwin":
 import torch
 
 
-SERVICE_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SERVICE_ROOT = REPO_ROOT / "gpu-service"
 sys.path.insert(0, str(SERVICE_ROOT))
 
 

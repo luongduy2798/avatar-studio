@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVICE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SERVICE_ROOT="$REPO_ROOT/gpu-service"
 cd "$SERVICE_ROOT"
 
 : "${AVATAR_S3_BUCKET:?AVATAR_S3_BUCKET is required}"
