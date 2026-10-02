@@ -1,0 +1,5 @@
+export const JOB_STORE = Symbol('JOB_STORE')
+export const STORAGE = Symbol('STORAGE')
+export const QUEUE = Symbol('QUEUE')
+export const IDEMPOTENCY = Symbol('IDEMPOTENCY')
+export const RUNNER_STORE = Symbol('RUNNER_STORE')
