@@ -59,6 +59,14 @@ export class MasterService implements OnModuleDestroy {
     console.log(`Avatar Master WSS endpoint ready at ${this.config.runnerWsPath}`)
   }
 
+  disconnectRevokedRunner(runnerId: string) {
+    const connection = this.sockets.get(runnerId)
+    if (!connection) return
+    connection.runner.status = 'revoked'
+    this.sockets.delete(runnerId)
+    connection.socket.close(1008, 'Runner revoked')
+  }
+
   async onModuleDestroy() {
     this.stopped = true
     if (this.monitorTimer) clearInterval(this.monitorTimer)
@@ -409,6 +417,12 @@ export class MasterService implements OnModuleDestroy {
       }
     }
     for (const assignment of [...this.assignments.values()]) {
+      const connection = this.sockets.get(assignment.runnerId)
+      if (!connection || connection.runner.status !== 'online' || connection.socket.readyState !== WebSocket.OPEN) {
+        const job = await this.jobs.get(assignment.jobId)
+        if (job) await this.failAssignment(assignment, job, 'Runner disconnected or revoked')
+        continue
+      }
       if (assignment.expiresAt > Date.now()) {
         await this.queue.heartbeat(assignment.message, this.config.runnerLeaseSeconds)
         assignment.expiresAt = Date.now() + this.config.runnerLeaseSeconds * 1000

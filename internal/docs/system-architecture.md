@@ -72,7 +72,7 @@ Production mapping dự kiến:
 
 | Thành phần | Công nghệ / hạ tầng |
 | --- | --- |
-| Master | NestJS process trên VM/CPU, PM2 hoặc Docker |
+| Master | NestJS process trên VM/CPU, chạy bằng PM2 |
 | Input/output | S3 |
 | Job state | DynamoDB |
 | Queue | SQS |
@@ -204,7 +204,7 @@ SQS giữ 1.000 jobs
 GPU fleet xử lý dần theo capacity hiện tại
 ```
 
-Flow trên bảo đảm hấp thụ burst, nhưng nếu 1.000 request tới gần như cùng lúc thì autoscaling bắt đầu sau khi queue tăng không thể tự bảo đảm cả 1.000 job đều hoàn tất trong 15 giây. EC2/container/model cold-start nằm ngoài latency budget này. Muốn giữ SLA tức thời phải có **warm capacity đã sẵn sàng inference trước khi burst tới**, hoặc một GPU phải xử lý được nhiều job trong cùng cửa sổ SLA nhờ concurrency/batching đã benchmark.
+Flow trên bảo đảm hấp thụ burst, nhưng nếu 1.000 request tới gần như cùng lúc thì autoscaling bắt đầu sau khi queue tăng không thể tự bảo đảm cả 1.000 job đều hoàn tất trong 15 giây. EC2/model cold-start nằm ngoài latency budget này. Muốn giữ SLA tức thời phải có **warm capacity đã sẵn sàng inference trước khi burst tới**, hoặc một GPU phải xử lý được nhiều job trong cùng cửa sổ SLA nhờ concurrency/batching đã benchmark.
 
 Autoscaler nên dựa ít nhất trên:
 
@@ -217,7 +217,7 @@ Autoscaler nên dựa ít nhất trên:
 
 Autoscaling production nên có hai tầng:
 
-- **warm floor**: số worker tối thiểu đang running, container sống và model đã load; đây là capacity chịu trách nhiệm cho SLA 15 giây của traffic tức thời và phải có N+1 headroom/reserve đủ để một worker lỗi không làm mất toàn bộ latency headroom,
+- **warm floor**: số worker tối thiểu đang running và model đã load; đây là capacity chịu trách nhiệm cho SLA 15 giây của traffic tức thời và phải có N+1 headroom/reserve đủ để một worker lỗi không làm mất toàn bộ latency headroom,
 - **elastic burst capacity**: worker bổ sung được scale-out khi queue depth/queue age tăng; tầng này bảo vệ SLA khi traffic cao kéo dài nhưng không thay thế warm floor cho burst đột ngột.
 
 Không scale từ 0 nếu vẫn tuyên bố SLA <=15 giây. `min_workers` phải được xác định từ p95/p99 arrival rate và benchmark throughput thực tế trên L4. Nếu có traffic theo lịch hoặc sự kiện dự đoán được, pre-scale trước khi traffic bắt đầu để tránh trả idle cost cả ngày.

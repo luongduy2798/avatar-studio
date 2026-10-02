@@ -7,14 +7,12 @@ master/
   src/                 Public API, Admin API, scheduler and Runner WSS gateway
   package.json         Node.js dependencies for Avatar Master
   deploy/              PM2, Nginx and Master deployment launchers
-  Dockerfile           Optional Master container image
 
 runner/
   agent/               WSS agent, enrollment and heartbeat
   runtime/             Python inference pipeline and LivePortrait adapter
   setup-liveportrait-*  Model/runtime setup for the runner machine
   install-*            Native installers for Unix and Windows
-  Dockerfile           Optional runner container image
 
 internal/
   web-client/           Internal benchmark UI only
@@ -26,8 +24,9 @@ internal/
 
 Deploying Master requires only `master/` and its Node.js environment. Deploying
 a Runner requires only `runner/`, the LivePortrait model/runtime and machine
-dependencies such as Python, FFmpeg and the GPU driver. Neither production
-service needs `internal/web-client/`.
+dependencies such as Python, FFmpeg and the GPU driver. Master runs under PM2;
+Runner runs as a native OS service. Neither production service needs
+`internal/web-client/`.
 
 For local benchmarking, `internal/scripts/dev-stack.sh` sets
 `AVATAR_LOCAL_BENCHMARKS=1`, starts Master with the local-only benchmark module

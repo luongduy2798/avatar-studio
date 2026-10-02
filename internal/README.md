@@ -17,5 +17,9 @@ make -f internal/Makefile setup
 make -f internal/Makefile run
 ```
 
+Runbook copy-paste đầy đủ nằm trong
+[docs/local-runbook.md](docs/local-runbook.md). Benchmark chi tiết nằm trong
+[docs/local-benchmark.md](docs/local-benchmark.md).
+
 Production không dùng `internal/`; Master lấy code trong `master/`, còn máy
 inference cài Runner từ `runner/`.

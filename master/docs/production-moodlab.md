@@ -6,6 +6,9 @@ Production có một process NestJS trên VM/EC2 CPU:
 
 S3 lưu input/output, DynamoDB lưu job/runner/enrollment/idempotency, SQS giữ queue và DLQ giữ lỗi sau retry. Runner không đọc SQS và không giữ AWS credentials; runner nhận assignment qua WSS và upload bằng presigned URL.
 
+Runbook triển khai theo từng bước, có thể copy lệnh trực tiếp, nằm trong
+[production-runbook.md](production-runbook.md).
+
 DynamoDB table key tối thiểu:
 
 | Table | Partition key | TTL |
@@ -34,12 +37,29 @@ Build API một lần rồi chạy bằng PM2:
 ```bash
 cd /path/to/avatar-master
 npm install
+npm run setup:admin
 npm run build
 pm2 start deploy/ecosystem.config.cjs
 pm2 save
 ```
 
 Nginx dùng cấu hình mẫu tại `deploy/nginx/avatar.conf`; production cần HTTPS để Moodlab gọi API và runner kết nối WSS. Cả hai route đều proxy tới port 8000.
+
+## Quản trị Master
+
+Mở `https://avatar.example.com/admin` và đăng nhập bằng `AVATAR_ADMIN_TOKEN`
+được truyền vào môi trường process Master. Trang được phục vụ bởi cùng process,
+không cần service frontend riêng. `npm run build` tạo `admin-ui/dist/`; khi
+deploy bằng PM2/native, đóng gói cả `admin-ui/dist/` và `dist/`.
+
+Trang hiển thị Runner và heartbeat, tự cập nhật mỗi 10 giây, có tìm kiếm và lọc
+trạng thái. Chọn **Kết nối Runner** để tạo mã enrollment có TTL và lấy lệnh cài.
+Mở chi tiết một Runner để thu hồi quyền kết nối. Sau thu hồi, scheduler ngắt
+socket của Runner; job chưa hoàn tất được xử lý qua cơ chế retry/DLQ hiện có.
+
+Token admin và mã enrollment không được lưu trên browser storage. Trang tổng
+quan báo số job do Runner online cung cấp; đây không phải thống kê toàn bộ
+job/queue hoặc lịch sử throughput.
 
 Biến production tối thiểu:
 

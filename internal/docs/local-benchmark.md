@@ -1,7 +1,10 @@
 # Local batch benchmark
 
-Avatar Studio can benchmark one machine at a time without Docker or an external
-database. The web client and the local Master/Runner processes share the local
+Nếu chỉ cần chạy từ đầu đến cuối, dùng [local-runbook.md](local-runbook.md).
+Phần dưới giải thích benchmark và cách đọc kết quả.
+
+Avatar Studio can benchmark one machine at a time without external
+infrastructure. The web client and the local Master/Runner processes share the local
 `runner/.runtime` directory.
 
 The internal dev stack sets `AVATAR_LOCAL_BENCHMARKS=1`; production Master keeps
@@ -68,9 +71,6 @@ end-to-end latency and jobs/s per request.
 
 Local mode stores job records, queue messages, input files and output files under
 `runner/.runtime`. Delete that directory to clear old benchmark data.
-
-Docker is optional for later Ubuntu reproducibility. It is not required for the
-native macOS or Ubuntu benchmark flow.
 
 `make -f internal/Makefile run` and the direct dev stack command start a fresh
 local session. They clear local jobs, queue messages, temporary work and

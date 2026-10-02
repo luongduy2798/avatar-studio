@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Header, Headers, Param, Post } from '@nestjs/common'
 import { AdminService } from './admin.service'
 
 @Controller('api/v1/admin')
@@ -10,6 +10,7 @@ export class AdminController {
   }
 
   @Post('runners/enrollment-codes')
+  @Header('Cache-Control', 'no-store')
   createCode(
     @Headers('authorization') authorization: string | undefined,
     @Body() body: { ttl_seconds?: number },
@@ -19,12 +20,14 @@ export class AdminController {
   }
 
   @Get('runners')
+  @Header('Cache-Control', 'no-store')
   list(@Headers('authorization') authorization: string | undefined) {
     this.admin.authorize(this.token(authorization))
     return this.admin.listRunners()
   }
 
   @Get('runners/:runnerId')
+  @Header('Cache-Control', 'no-store')
   get(
     @Headers('authorization') authorization: string | undefined,
     @Param('runnerId') runnerId: string,
@@ -34,6 +37,7 @@ export class AdminController {
   }
 
   @Post('runners/:runnerId/revoke')
+  @Header('Cache-Control', 'no-store')
   revoke(
     @Headers('authorization') authorization: string | undefined,
     @Param('runnerId') runnerId: string,
@@ -43,6 +47,7 @@ export class AdminController {
   }
 
   @Get('metrics')
+  @Header('Cache-Control', 'no-store')
   metrics(@Headers('authorization') authorization: string | undefined) {
     this.admin.authorize(this.token(authorization))
     return this.admin.metrics()

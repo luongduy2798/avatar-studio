@@ -5,8 +5,8 @@ module.exports = {
     {
       name: 'avatar-master',
       cwd: path.resolve(__dirname, '..'),
-      script: 'dist/main.js',
-      interpreter: 'node',
+      script: 'deploy/start.sh',
+      interpreter: 'bash',
       env: { NODE_ENV: 'production', AVATAR_LOCAL_BENCHMARKS: '0' },
     },
   ],

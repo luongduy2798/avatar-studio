@@ -40,6 +40,8 @@ setup: setup-node setup-runner setup-liveportrait
 setup-node:
 	@command -v npm >/dev/null 2>&1 || { echo 'npm is required.' >&2; exit 1; }
 	npm --prefix "$(MASTER_DIR)" install --no-audit --no-fund --package-lock=false
+	npm --prefix "$(MASTER_DIR)" run setup:admin
+	npm --prefix "$(MASTER_DIR)" run build:admin
 	npm --prefix "$(WEB_DIR)" install --no-audit --no-fund --package-lock=false
 
 setup-runner:
@@ -66,6 +68,8 @@ doctor:
 
 check-setup:
 	@test -d "$(MASTER_DIR)/node_modules" || { echo 'Missing master/node_modules. Run: make -f internal/Makefile setup' >&2; exit 1; }
+	@test -d "$(MASTER_DIR)/admin-ui/node_modules" || { echo 'Missing master/admin-ui/node_modules. Run: make -f internal/Makefile setup' >&2; exit 1; }
+	@test -f "$(MASTER_DIR)/admin-ui/dist/index.html" || { echo 'Missing built Master admin UI. Run: make -f internal/Makefile setup' >&2; exit 1; }
 	@test -d "$(WEB_DIR)/node_modules" || { echo 'Missing internal/web-client/node_modules. Run: make -f internal/Makefile setup' >&2; exit 1; }
 	@test -x "$(RUNNER_DIR)/.venv/bin/python" || { echo 'Missing runner/.venv. Run: make -f internal/Makefile setup' >&2; exit 1; }
 	@test -x "$(LIVEPORTRAIT_ROOT)/.venv/bin/python" || { echo 'Missing LivePortrait runtime. Run: make -f internal/Makefile setup' >&2; exit 1; }

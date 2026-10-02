@@ -55,6 +55,8 @@ command -v "$PYTHON_BIN" >/dev/null 2>&1 || { echo "$PYTHON_BIN is required." >&
 
 if [ "$AVATAR_SKIP_SETUP" != "1" ]; then
   npm --prefix "$MASTER_DIR" install --no-audit --no-fund --package-lock=false
+  npm --prefix "$MASTER_DIR" run setup:admin
+  npm --prefix "$MASTER_DIR" run build:admin
   npm --prefix "$WEB_DIR" install --no-audit --no-fund --package-lock=false
 
   if [ ! -x "$RUNNER_DIR/.venv/bin/python" ]; then

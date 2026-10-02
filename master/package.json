@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "ts-node --transpile-only src/main.ts",
-    "build": "tsc -p tsconfig.json",
+    "setup:admin": "npm --prefix admin-ui install --no-audit --no-fund --package-lock=false",
+    "dev:admin": "npm --prefix admin-ui run dev",
+    "build:admin": "npm --prefix admin-ui run build",
+    "build": "npm run build:admin && tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
